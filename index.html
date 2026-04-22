@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+ <html>
+ <head>
+ <meta charset="UTF-8">
+ <title>観光スタンプラリー</title>
+<style>
+ body{
+   text-align:center;
+   font-family:sans-serif;
+   background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+ }
+h2{ color:#333; }
+button{
+   background:#2196f3;
+   color:white;
+   border:none;
+   border-radius:10px;
+   box-shadow:0 4px 8px rgba(0,0,0,0.2);
+   font-size:20px;
+   padding:15px;
+   margin:10px;
+ }
+button:active{ transform:scale(0.95); }
+#score{ color:#ff9800; }
+#collection{
+   display:flex;
+   flex-wrap:wrap;
+   justify-content:center;
+ }
+
+
+#collection img{
+   width:100px;
+   margin:5px;
+   border-radius:10px;
+ }
+#startScreen{
+   position:fixed;
+   width:100%;
+   height:100%;
+   background:#2196f3;
+   color:white;
+   display:flex;
+   flex-direction:column;
+   justify-content:center;
+   align-items:center;
+
+ }
+
+ #startImage{
+  position:absolute;
+  bottom:10px;
+  right:10px;
+  width:200px; /* サイズ調整 */
+  opacity:0.9; /* 少しなじませる */
+}
+
+#game{ display:none; }
+#map{
+   height:400px;
+   width:90%;
+   margin:20px auto;
+   border-radius:10px;
+ }
+
+ #clearScreen{
+  display:none;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* スタンプ */
+#stampPopup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+
+  display:none;
+
+  justify-content:center;
+  align-items:center;
+
+  z-index:9999; /* ←追加（最前面） */
+}
+
+ #stampContent{
+   background:white;
+   padding:30px;
+   border-radius:15px;
+   animation: pop 0.5s;
+ }
+@keyframes pop{
+   0%{ transform:scale(0.5); opacity:0; }
+   100%{ transform:scale(1); opacity:1; }
+ }
+/* キラキラ */
+ .sparkle{
+   position:fixed;
+   width:8px;
+   height:8px;
+   background:gold;
+   border-radius:50%;
+   animation: sparkleAnim 1s forwards;
+ }
+@keyframes sparkleAnim{
+   0%{ opacity:1; }
+   100%{ transform:translateY(-100px); opacity:0; }
+ }
+ </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+ <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+ <body>
+   
+ <div id="startScreen">
+   <h1>観光スタンプラリー</h1>
+  <p>📍 位置情報をONにしてください</p>
+   <p>🚶‍♂️ 実際に歩いて近づいて現在地チェックを押してください</p>
+   <p>⚠️ 歩きスマホは危険！安全に楽しもう</p>
+  <button onclick="startGame()">スタート</button>
+  <img id="startImage" src="https://i.imgur.com/eQFQswd.png" />
+ </div>
+<div id="game">
+   <button onclick="getLocation()">現在地チェック</button>
+   <h2 id="score">現在のポイント: 0</h2>
+   <p id="result"></p>
+   <div id="map"></div>
+  <h3>スタンプコレクション</h3>
+   <div id="collection"></div>
+
+  <h3>ジャンル別一覧</h3>
+<div id="genreList"></div>
+
+  <h3 id="infoName"></h3>
+   <p id="infoPoint"></p>
+   <p id="infoDesc"></p>
+  <button id="resetBtn" onclick="resetGame()" style="display:none;">
+  もう一度遊ぶ
+</button>
+
+ </div>
+<div id="stampPopup">
+   <div id="stampContent"></div>
+ </div>
+<script>
+let stampCount = 0
+ let marker
+ let map
+ let gettingStamp = false
+ 
+let circle
+   
+  let rareAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3")
+ 
+ rareAudio.preload = "auto"
+// 距離
+ function getDistance(a,b,c,d){
+   const R=6371000
+   const dLat=(c-a)*Math.PI/180
+   const dLng=(d-b)*Math.PI/180
+   const x=Math.sin(dLat/2)**2+
+     Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
+     Math.sin(dLng/2)**2
+   return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))
+ }
+// スタート
+function startGame(){
+  document.getElementById("startScreen").style.display="none"
+  document.getElementById("game").style.display="block"
+
+  
+
+ // ② 少し遅れて地図作る（重要！）
+   setTimeout(()=>{
+     map = L.map('map').setView([41.7687,140.7288],13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+       .addTo(map)
+    setSpots()
+    showGenres()
+   }, 100)
+ }
+// スポット
+ const spots = [
+{name:"市立函館高校",lat:41.79450604936817,lng:140.76358217606838,point:50,got:false,desc:"函館市唯一の市立高校",stamp:"https://i.imgur.com/WyAkpLk.png",rare:true,genre:"みんなの高校"},
+{name:"函館公園",lat:41.75642425057021,lng:140.71603982603986,point:20,got:false,desc:"昼は動物施設、夜は幻想的な桜が楽しめる",stamp:"https://i.imgur.com/IhuAT5v.png",genre:"絶景"},
+{name:"北方民族資料館",lat:41.7652,lng:140.7180,point:20,got:false,desc:"旧日本銀行で、民族に関する展示が多い",stamp:"https://i.imgur.com/2RU7q5Z.png",rare:true,genre:"歴史"},
+{name:"熱帯植物園",lat:41.7775,lng:140.7828,point:30,got:false,desc:"植物だけでなく猿も楽しめる植物園",stamp:"https://i.imgur.com/FjKvtco.png",rare:true,genre:"自然"},
+{name:"ハリストス正教会",lat:41.7622,lng:140.7148,point:30,got:false,desc:"白い壁に緑色の屋根が映える歴史ある教会",stamp:"https://i.imgur.com/YZOryaq.png",genre:"ロマンあふれる"},
+{name:"二十間坂",lat:41.7638,lng:140.7155,point:30,got:false,desc:"八幡坂にも負けない！広くて美しい坂道",stamp:"https://i.imgur.com/jEOk82t.png",genre:"絶景"},
+{name:"こどものくに",lat:41.7567318201806,lng:140.71660449566673,point:30,got:false,desc:"日本で一番古い観覧車がある遊園地エリア",stamp:"https://i.imgur.com/aOGiitq.png",genre:"最古の〇〇"},
+{name:"旧丸井今井",lat:41.7639442153979,lng:140.71761135461858,point:30,got:false,desc:"歴史ある建物、北で一番古いエレベターがある",stamp:"https://i.imgur.com/4UDAbWs.png",genre:"最古の〇〇"},
+{name:"旧金森洋物店",lat:41.7656,lng:140.7192,point:30,got:false,desc:"和洋折衷な昔の洋品店",stamp:"https://i.imgur.com/uiChVp1.png",rare:true,genre:"ロマンあふれる"},
+{name:"旧公会堂",lat:41.7652779492643,lng:140.70981456015946,point:30,got:false,desc:"外観から溢れ出るレトロさがある有名な洋館",stamp:"https://i.imgur.com/uWEywJW.png",genre:"ロマンあふれる"},
+{name:"市立函館博物館",lat:41.756114551305316,lng:140.7151896588969,point:30,got:false,desc:"様々なジャンルの歴史資料が展示されている",stamp:"https://i.imgur.com/rkKPTD9.png",genre:"歴史"}
+]
+function setSpots(){
+   spots.forEach(s=>{
+    // ピン作成
+     s.marker = L.marker([s.lat, s.lng]).addTo(map)
+    // 地図に名前だけ表示
+     s.marker.bindPopup("<b>" + s.name + "</b>")
+    // タップで下に詳細
+     s.marker.on('click', function(){
+       document.getElementById("infoName").textContent = s.name
+       document.getElementById("infoPoint").textContent = "+" + s.point + "pt"
+       document.getElementById("infoDesc").textContent = s.desc
+     })
+  })
+ }
+
+ function showGenres(){
+  const area = document.getElementById("genreList")
+  area.innerHTML = ""
+
+  const genres = {}
+
+  // グループ分け
+  spots.forEach(s=>{
+    if(!s.genre) return
+
+    const gList = Array.isArray(s.genre) ? s.genre : [s.genre]
+
+    gList.forEach(g=>{
+      if(!genres[g]) genres[g] = []
+      genres[g].push(s.name)
+    })
+  })
+
+  // 表示
+  for(let g in genres){
+    const title = document.createElement("h4")
+    title.textContent = "◆ " + g
+
+    const list = document.createElement("p")
+    list.textContent = genres[g].join("・")
+
+    area.appendChild(title)
+    area.appendChild(list)
+  }
+}
+
+
+ function bigSparkle(){
+  for(let i=0;i<100;i++){
+    const s=document.createElement("div")
+    s.className="sparkle"
+    s.style.left=Math.random()*window.innerWidth+"px"
+    s.style.top=Math.random()*window.innerHeight+"px"
+    document.body.appendChild(s)
+    setTimeout(()=>s.remove(),1000)
+  }
+}
+
+// 位置取得
+ function getLocation(){
+  navigator.geolocation.getCurrentPosition(checkPosition)
+}
+
+ // キラキラ
+ function sparkle(){
+   for(let i=0;i<20;i++){
+     const s=document.createElement("div")
+     s.className="sparkle"
+     s.style.left=Math.random()*window.innerWidth+"px"
+     s.style.top=Math.random()*window.innerHeight+"px"
+     document.body.appendChild(s)
+     setTimeout(()=>s.remove(),1000)
+   }
+ }
+// スタンプ表示
+ function showStamp(s){
+  const box = document.getElementById("stampContent")
+   box.innerHTML = ""
+  const title = document.createElement("h2")
+   title.textContent = s.rare ? "🌟レアスタンプGET！" : "スタンプGET！"
+  const text = document.createElement("p")
+   text.textContent = s.name + " +" + s.point + "pt"
+  const img = document.createElement("img")
+   img.src = s.stamp || "https://cdn-icons-png.flaticon.com/512/190/190411.png"
+   img.style.width = "150px"
+   img.style.display = "block"
+   img.style.margin = "15px auto"
+  box.appendChild(title)
+   box.appendChild(text)
+   box.appendChild(img)
+  document.getElementById("stampPopup").style.display = "flex"
+  if(s.rare){
+     rareAudio.currentTime = 0
+     rareAudio.play()
+     sparkle()
+   }else{
+        }
+  setTimeout(()=>{
+  document.getElementById("stampPopup").style.display = "none"
+  gettingStamp = false
+},2000)
+
+ }
+    
+ // 判定
+ function checkPosition(pos){
+   const lat = pos.coords.latitude
+   const lng = pos.coords.longitude
+  if(marker) map.removeLayer(marker)
+   marker = L.marker([lat,lng], {
+   icon: L.icon({
+     iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+     iconSize: [32, 32]
+   })
+ }).addTo(map)
+  map.setView([lat,lng],15)
+  // 🔵 半径円
+   if(circle){
+     map.removeLayer(circle)
+   }
+  circle = L.circle([lat, lng], {
+     radius: 200,
+     color: 'blue',
+     fillColor: '#2196f3',
+     fillOpacity: 0.2
+   }).addTo(map)
+  let found = false
+  spots.forEach(s=>{
+     if(getDistance(lat,lng,s.lat,s.lng) < 200){
+     if(!s.got && !gettingStamp){
+       gettingStamp = true
+
+         s.got = true
+         stampCount += s.point
+        // 🔴 取得したら赤ピンに変更
+         s.marker.setIcon(L.icon({
+           iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+           iconSize: [32, 32]
+         }))
+        // ⭐ スタンプ画像追加
+         const img = document.createElement("img")
+         img.src = s.stamp || "https://cdn-icons-png.flaticon.com/512/190/190411.png"
+         document.getElementById("collection").appendChild(img)
+        // ⭐ ポイント更新
+         document.getElementById("score").textContent = "現在のポイント: " + stampCount
+        // ⭐ ポップアップ表示
+         showStamp(s)
+        // ⭐ 下の説明更新
+         document.getElementById("infoName").textContent = s.name
+         document.getElementById("infoPoint").textContent = "+" + s.point + "pt"
+         document.getElementById("infoDesc").textContent = s.desc
+       }
+      found = true
+     }
+   })
+  if(!found){
+     document.getElementById("result").textContent = "まだ近くにスポットがないよ"
+   }
+// 全部取得チェック
+if(spots.every(s => s.got)){
+  document.getElementById("clearScreen").style.display = "flex"
+  document.getElementById("resetBtn").style.display = "inline-block"
+
+  bigSparkle() // ←ここに変更
+}
+
+ }
+ 
+  function resetGame(){
+  // ポイントリセット
+   stampCount = 0
+   document.getElementById("score").textContent = "現在のポイント: 0"
+  // コレクション削除
+   document.getElementById("collection").innerHTML = ""
+  // 説明リセット
+   document.getElementById("infoName").textContent = ""
+   document.getElementById("infoPoint").textContent = ""
+   document.getElementById("infoDesc").textContent = ""
+  // スポット初期化
+   spots.forEach(s=>{
+     s.got = false
+    // 🔵 青ピンに戻す
+     s.marker.setIcon(L.icon({
+       iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+       iconSize: [32, 32]
+     }))
+   })
+  // クリア画面消す
+   document.getElementById("clearScreen").style.display = "none"
+
+   document.getElementById("resetBtn").style.display = "none"
+
+ }
+</script>
+ <div id="clearScreen" style="
+ display:none;
+ margin-top:20px;
+ ">
+   <h1>クリア！🎉</h1>
+   <img id="clearImage" src="https://i.imgur.com/Eb9djZR.png" style="width:90%; max-width:400px;">
+</div>
+  
+ 
+   
+ </body>
+ </html>
