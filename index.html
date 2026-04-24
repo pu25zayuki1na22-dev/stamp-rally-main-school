@@ -183,19 +183,20 @@ function startGame(){
    }, 100)
  }
 // スポット
- const spots = [
+  const spots = [
 {name:"市立函館高校",lat:41.79450604936817,lng:140.76358217606838,point:50,got:false,desc:"函館市唯一の市立高校",stamp:"https://i.imgur.com/WyAkpLk.png",rare:true,genre:"みんなの高校"},
-{name:"函館公園",lat:41.75642425057021,lng:140.71603982603986,point:20,got:false,desc:"昼は動物施設、夜は幻想的な桜が楽しめる",stamp:"https://i.imgur.com/IhuAT5v.png",genre:"絶景"},
-{name:"北方民族資料館",lat:41.7652,lng:140.7180,point:20,got:false,desc:"旧日本銀行で、民族に関する展示が多い",stamp:"https://i.imgur.com/2RU7q5Z.png",rare:true,genre:"歴史"},
-{name:"熱帯植物園",lat:41.7775,lng:140.7828,point:30,got:false,desc:"植物だけでなく猿も楽しめる植物園",stamp:"https://i.imgur.com/FjKvtco.png",rare:true,genre:"自然"},
-{name:"ハリストス正教会",lat:41.7622,lng:140.7148,point:30,got:false,desc:"白い壁に緑色の屋根が映える歴史ある教会",stamp:"https://i.imgur.com/YZOryaq.png",genre:"ロマンあふれる"},
-{name:"二十間坂",lat:41.7638,lng:140.7155,point:30,got:false,desc:"八幡坂にも負けない！広くて美しい坂道",stamp:"https://i.imgur.com/jEOk82t.png",genre:"絶景"},
-{name:"こどものくに",lat:41.7567318201806,lng:140.71660449566673,point:30,got:false,desc:"日本で一番古い観覧車がある遊園地エリア",stamp:"https://i.imgur.com/aOGiitq.png",genre:"最古の〇〇"},
-{name:"旧丸井今井",lat:41.7639442153979,lng:140.71761135461858,point:30,got:false,desc:"歴史ある建物、北で一番古いエレベターがある",stamp:"https://i.imgur.com/4UDAbWs.png",genre:"最古の〇〇"},
-{name:"旧金森洋物店",lat:41.7656,lng:140.7192,point:30,got:false,desc:"和洋折衷な昔の洋品店",stamp:"https://i.imgur.com/uiChVp1.png",rare:true,genre:"ロマンあふれる"},
-{name:"旧公会堂",lat:41.7652779492643,lng:140.70981456015946,point:30,got:false,desc:"外観から溢れ出るレトロさがある有名な洋館",stamp:"https://i.imgur.com/uWEywJW.png",genre:"ロマンあふれる"},
-{name:"市立函館博物館",lat:41.756114551305316,lng:140.7151896588969,point:30,got:false,desc:"様々なジャンルの歴史資料が展示されている",stamp:"https://i.imgur.com/rkKPTD9.png",genre:"歴史"}
+{name:"最古のコンクリート電柱",lat:41.76509795739517,lng:140.71654809597842,point:20,got:false,desc:"日本最古のコンクリート電柱、今とは少し形も違います",stamp:"https://i.imgur.com/3sCou2Q.png",genre:"最古の〇〇"},
+{name:"桜ヶ丘通り",lat:41.78471170062522,lng:140.76280284166694,point:20,got:false,desc:"桜のアーチが美しく、１００本物桜の木がある",stamp:"https://i.imgur.com/ypBsosS.png",rare:true,genre:"絶景"},
+{name:"ティーショップ夕日",lat:41.7667247858931,lng:140.6955032300196,point:30,got:false,desc:"海を眺めながら、ゆっくり過ごせる",stamp:"https://i.imgur.com/eYBAxAa.png",rare:true,genre:"食べ物"},
+{name:"函館八幡宮",lat:41.75412382252375,lng:140.70988615700801,point:30,got:false,desc:"美しい眺め、俳優さんが結婚式を上げたことで有名です",stamp:"https://i.imgur.com/5wjFwu3.png",genre:"寺社"},
+{name:"千秋庵　総本家",lat:41.80135368917188,lng:140.76827878769018,point:30,got:false,desc:"どら焼きや元祖　山親爺が有名",stamp:"https://i.imgur.com/sUhXdSa.png",genre:"食べ物"},
+{name:"湯の川温泉足湯",lat:41.77996162820263,lng:140.785709557008,point:30,got:false,desc:"湯の川温泉のお湯に気軽に入ることが出来ます",stamp:"https://i.imgur.com/cKlSJL1.png",genre:"体験スポット"},
+{name:"湯倉神社",lat:41.782590413733686,lng:140.791063857008,point:30,got:false,desc:"いろいろな種類のお守りおみくじがある",stamp:"https://i.imgur.com/RbnKaSl.png",genre:"寺社"},
+{name:"銀月",lat:41.78024472657789,lng:140.78722208399637,point:30,got:false,desc:"団子で有名！地元の人気店なので売り切れに注意",stamp:"https://i.imgur.com/TNOh39f.png",rare:true,genre:"食べ物"},
+{name:"函館自由市場",lat:41.77354174218063,lng:140.73440902632584,point:30,got:false,desc:"市民に愛されている市場、プロの御用達です！",stamp:"https://i.imgur.com/KNoU0Ia.png",genre:"市民の市場"},
+{name:"旧金森洋物店",lat:41.766461301032905,lng:140.71300404536075,point:30,got:false,desc:"和洋折衷な珍しい建物で歴史が学べます！",stamp:"https://i.imgur.com/fNkEGOn.png",genre:"歴史"}
 ]
+
 function setSpots(){
    spots.forEach(s=>{
     // ピン作成
